@@ -1,10 +1,9 @@
-final int dispWidth = 4800;
-final int dispHeight = 3000;
+final int dispWidth = 320;
+final int dispHeight = 200;
 final int senseWidth = 16;
 final int senseHeight = 10;
-final int senseScale = 16;
-final int forceScale = 20;
-ArrayList<int[][]> buffer = new ArrayList<int[][]>();
+final int senseScale = 10;
+final int forceScale = 16;
 
 // test and validation functions
 int[][] genForceMap(int r, int c) {
@@ -46,22 +45,21 @@ class TouchEvent {
   float z;
 }
 
-void lookforTouch(int[][] map){
-  //println(buffer.size());
-  if (buffer.size() >= 3) buffer.remove(0);
-  buffer.add(map);
-//printMap(map);  
-  for (int i = 0; i < map.length; i++) {
-    for (int j = 0; j < map[i].length; j++) {
-      map[i][j] = map[i][j] >> 2;
-      int sum = 0;
-      for (int k = 0; k < buffer.size(); k++) {
-        sum += buffer.get(k)[i][j];
-      }
-      map[i][j] = sum / buffer.size();
-    }
-  }
+void setup(){
+  ArrayList<ForceMap> fmlist = new ArrayList<ForceMap>();
 
+  //int[][] testMap = genForceMap(10, 16);
+  int[][] testMap =new int[][]{
+    {0, 0, 6},
+    {0, 0, 0},
+    {6, 0, 0}
+  };
+  printMap(testMap);
+  println();
+  lookforTouch(testMap);
+}
+
+void lookforTouch(int[][] map){
   for (int row = 0; row < map.length; row++){
     for (int col = 0; col < map[row].length; col++){
       boolean touch = true;
@@ -71,7 +69,7 @@ void lookforTouch(int[][] map){
       // if higher force in surrounded cells, this cell is not a centroid of force, move on to next cell
       // if no higher force in surrounded cells, copy a 3x3 array with current cell as centroid,
       // call evalForcemap() to conver it to a touch event.
-      if (t > senseScale / 8) {
+      if (t > senseScale / 4) {
         if (row > 0) {
           if (col > 0 && map[row][col] <= map[row-1][col-1]) touch = false;
           if (map[row][col] <= map[row-1][col]) touch = false;
@@ -108,22 +106,7 @@ void lookforTouch(int[][] map){
           fm.map = tmap;
 
           TouchEvent te = evalForcemap(fm);
-          //println(te.x, te.y, te.z);
-          stroke(255);
-          fill(0);
-          int radius = 0;
-          if (te.z > 2 && te.z <= 8) {
-            radius = 25;
-          }
-          else if (te.z > 8 && te.z <= 12) {
-            radius = 30;
-            fill(127);
-          }
-          else if (te.z > 12) {
-            radius = 35;
-            fill(255);
-          }
-          ellipse(te.x/10, te.y/10, radius, radius);
+          println(te.x, te.y, te.z);
         }
       }
     }
@@ -204,7 +187,7 @@ TouchEvent evalForcemap(ForceMap fm) {
   x = numerator / totalForce - ((1 - offset) / 2);
   x = rightShift == 1? -x : x;
   z = peakForce * (1 + log(totalForce / senseScale) / log(10));
-//println(x, y, z);
+//println(x, y);
   te.x = map(fm.cellX + x, 0, 1, 0, dispWidth / senseWidth);
   te.y = map(fm.cellY + y, 0, 1, 0, dispHeight / senseHeight);
   te.z = map(z, 0, senseScale, 0, forceScale);
