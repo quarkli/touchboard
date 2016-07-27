@@ -1,8 +1,9 @@
+final int filter = 3;
 final int dispWidth = 320;
 final int dispHeight = 200;
 final int senseWidth = 16;
 final int senseHeight = 10;
-final int senseScale = 10;
+final int senseScale = 256 >> filter;
 final int forceScale = 16;
 
 // test and validation functions
@@ -50,9 +51,9 @@ void setup(){
 
   //int[][] testMap = genForceMap(10, 16);
   int[][] testMap =new int[][]{
-    {0, 0, 6},
+    {8, 0, 0},
     {0, 0, 0},
-    {6, 0, 0}
+    {0, 0, 0}
   };
   printMap(testMap);
   println();
@@ -69,7 +70,7 @@ void lookforTouch(int[][] map){
       // if higher force in surrounded cells, this cell is not a centroid of force, move on to next cell
       // if no higher force in surrounded cells, copy a 3x3 array with current cell as centroid,
       // call evalForcemap() to conver it to a touch event.
-      if (t > senseScale / 4) {
+      if (t > senseScale / 10.0) {
         if (row > 0) {
           if (col > 0 && map[row][col] <= map[row-1][col-1]) touch = false;
           if (map[row][col] <= map[row-1][col]) touch = false;
@@ -113,83 +114,68 @@ void lookforTouch(int[][] map){
   }
 }
 
-// force centroid formula: [a, b, c, d, e, ...] = sum of force of a column or row
-// 2x2 map = b / (a+b)
-// 3x3 map = (b/2 + c) / (a+b+c)
-// 4x4 map = (b/3 + 2c/3 + d) / (a+b+c+d)
-// 5x5 map = (b/4 + 2c/4 + 3d/4 + e) / (a+b+c+d+e)
-// ...
 
+// evalForcemap() takes a 3x3 force matrix and convert it to a x, y, z force event
+//
+// force centroid formula: 
+// [a, b, c] = sum of force of a column or row
+// x = (b/2 + c) / (a+b+c), x >= 0, x <=1
+// x is the distance from the leftmost or topmost poinit.
+//
 // touch force formula:
-// force = peak_force x (1 + log10(total_force / sense_scale));
+// force = peakForce * log(totalForce) / log(peakForce)
 TouchEvent evalForcemap(ForceMap fm) {
   TouchEvent te = new TouchEvent();
   int rows = fm.map.length;
   int cols = fm.map[0].length;
   float numerator = 0;
   float totalForce = 0;
-  float peakForce = 0;
+  float peakForce = fm.map[1][1];
   float x = 0, y = 0, z = 0;
   float sum = 0;
-  int leftShift = 0, rightShift = 0, offset = 0;
   ArrayList<Float> w = new ArrayList<Float>();
 //printMap(fm.map);
 
   for (int row = 0; row < rows; row++) {
     for (int col = 0; col < cols; col++) {
-      // look for the maximum force
-      if (fm.map[row][col] > peakForce) peakForce = fm.map[row][col];
       // sum all force
       totalForce += fm.map[row][col];
       // sum row force
       sum += fm.map[row][col];
     }
     // Add numerator of force per row, skip first row
-    if (row > 0) {
-      w.add(sum);
-      if (row == rows - 1 && sum == 0) rightShift = 1;
-    }
-    else if (sum == 0) leftShift = -1;
+    if (row > 0) w.add(sum);
     sum = 0;
   }
 
-  offset = -leftShift | rightShift;
   for (int i = 0; i < w.size(); i++) {
-    numerator += w.get(i) * (w.size() - offset + i - 1) / (w.size() - offset);
+    numerator += w.get(i) * (w.size() - 1 + i) / w.size();
   }
 
-  y = numerator / totalForce - ((1 - offset) / 2);
-  y = rightShift == 1 ? -y : y;
+  y = numerator / totalForce;
+
+  // reset parameters
   numerator = 0;
   w.clear();
-  leftShift = 0;
-  rightShift = 0;
-  offset = 0;
 
   for (int col = 0; col < cols; col++) {
     for (int row = 0; row < rows; row++) {
       sum += fm.map[row][col];
     }
     // Add numerator of force per col, skip first col
-    if (col > 0) {
-      w.add(sum);
-      if (col == cols -1 && sum == 0) rightShift = 1;
-    }
-    else if (sum == 0) leftShift = -1;
+    if (col > 0) w.add(sum);
     sum = 0;
   }
 
-  offset = -leftShift | rightShift;
   for (int i = 0; i < w.size(); i++) {
-    numerator += w.get(i) * (w.size() - offset + i - 1) / (w.size() - offset);
+    numerator += w.get(i) * (w.size() - 1 + i) / w.size();
   }
+  x = numerator / totalForce;
+  z = peakForce * log(totalForce) / log(peakForce);
 
-  x = numerator / totalForce - ((1 - offset) / 2);
-  x = rightShift == 1? -x : x;
-  z = peakForce * (1 + log(totalForce / senseScale) / log(10));
-//println(x, y);
-  te.x = map(fm.cellX + x, 0, 1, 0, dispWidth / senseWidth);
-  te.y = map(fm.cellY + y, 0, 1, 0, dispHeight / senseHeight);
+println(x, y, z, senseScale, forceScale);
+  te.x = map(fm.cellX - 1 + x * 2, 0, 1, 0, dispWidth / senseWidth);
+  te.y = map(fm.cellY - 1 + y * 2, 0, 1, 0, dispHeight / senseHeight);
   te.z = map(z, 0, senseScale, 0, forceScale);
 
   return te;

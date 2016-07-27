@@ -20,7 +20,7 @@ void setup()
     
     println(sz_rect*klib.ncol, sz_rect*klib.nrow);
     //size(sz_rect*klib.ncol, sz_rect*klib.nrow);
-    size(300, 480);
+    size(480, 300);
     
     klib.start();
 }
