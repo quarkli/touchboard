@@ -5,6 +5,7 @@ final int senseWidth = 10;
 final int senseHeight = 16;
 final int senseScale = 256 >> filter;
 final int forceScale = 16;
+final int touchRadius = 25;
 ArrayList<int[][]> buffer = new ArrayList<int[][]>();
 
 // test and validation functions
@@ -47,11 +48,14 @@ class TouchEvent {
   float z;
 }
 
-void lookforTouch(int[][] map){
+ArrayList<TouchEvent> lookforTouch(int[][] map){
+  ArrayList<TouchEvent> teList = new ArrayList<TouchEvent>();
+  
   //println(buffer.size());
   if (buffer.size() >= 3) buffer.remove(0);
   buffer.add(map);
-//printMap(map);  
+  //printMap(map);
+
   for (int i = 0; i < map.length; i++) {
     for (int j = 0; j < map[i].length; j++) {
       map[i][j] = map[i][j] >> 2;
@@ -110,23 +114,17 @@ void lookforTouch(int[][] map){
 
           TouchEvent te = evalForcemap(fm);
           //println(te.x, te.y, te.z);
-          stroke(255);
-          fill(0);
-          int radius = 25;
-          if (te.z <= 2) {
-            radius = 25;
-          }
-          else if (te.z > 2 && te.z <= 4) {
-            fill(127);
-          }
-          else if (te.z > 4) {
-            fill(255);
-          }
-          ellipse(map(dispHeight-radius-te.y, 0, dispHeight, 0, dispHeight + radius), map(te.x, 0, dispWidth, 0, dispWidth + radius), radius, radius);
+          TouchEvent evt = new TouchEvent();
+          evt.x = map(dispHeight-touchRadius-te.y, 0, dispHeight, 0, dispHeight + touchRadius);
+          evt.y = map(te.x, 0, dispWidth, 0, dispWidth + touchRadius);
+          evt.z = te.z;
+          teList.add(evt);
         }
       }
     }
   }
+
+  return teList;
 }
 
 
