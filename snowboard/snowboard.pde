@@ -7,29 +7,27 @@
 
 KLib klib;
 int translateX = 20;
-int translateY = 20;
-PShape buttons[][] = new PShape[3][13];
+int translateY = 160;
+String myText = "";
+KeyButton buttons[][] = new KeyButton[3][13];
 
-final char keymap[][] = {
-  {'1', '2', 'a', 'b', 'm', 'n', 
-   '5', '6', 'e', 'f', 'q', 'r', 
-   '9', '0', 'i', 'j', 'u', 'v',
-   '3', '4', 'c', 'd', 'o', 'p',
-   '7', '8', 'g', 'h', 's', 't',
-   'y', 'z', 'k', 'l', 'w', 'x'},
-  {'!', '@', 'A', 'B', 'M', 'N', 
-   '%', '^', 'E', 'F', 'Q', 'R', 
-   '(', ')', 'I', 'J', 'U', 'V',
-   '#', '$', 'C', 'D', 'O', 'P',
-   '&', '*', 'G', 'H', 'S', 'T',
-   'Y', 'Z', 'K', 'L', 'W', 'X'}
+final String keyLabels[][] = {
+  {"1", "2", "3", "4",
+   "5", "6", "7", "8",
+   "9", "0", "y", "z"},
+  {"a", "b", "c", "d",
+   "e", "f", "g", "h",
+   "m", "n", "o", "p"},
+  {"q", "r", "s", "t",
+   "i", "j", "k", "l",
+   "u", "v", "w", "x"}
 };
 
 KeyButton btn1, btn2, btn3, btn4, btn5;
 
 void settings()
 {
-  size(dispHeight+translateX*2, dispWidth+translateY*2);
+  size(dispHeight+translateX*2, dispWidth+translateY);
 }
 
 void setup()
@@ -39,41 +37,60 @@ void setup()
     klib.init("COM3", "Snowboard", "1610");
     
     klib.start();
-    btn1 = new KeyButton(RECT, dispHeight/4, dispWidth/3, 5);
-    btn1.posX = 0;
-    btn1.posY = 0;
-    btn1.label = "A";
-    btn2 = new KeyButton(ELLIPSE, 45, 45, 5);
-    btn2.posX = dispHeight*5/16;
-    btn2.posY = 0;
-    btn2.label = "1";
-    btn3 = new KeyButton(ELLIPSE, 45, 45, 5);
-    btn3.posX = dispHeight*5/16;
-    btn3.posY = dispWidth/6;
-    btn3.label = "2";
-    btn4 = new KeyButton(ELLIPSE, 45, 45, 5);
-    btn4.posX = dispHeight*4/16;
-    btn4.posY = dispWidth/12;
-    btn4.label = "3";
-    btn5 = new KeyButton(ELLIPSE, 45, 45, 5);
-    btn5.posX = dispHeight*6/16;
-    btn5.posY = dispWidth/12;
-    btn5.label = "4";
+    for (int i=0; i<buttons.length; i++) {
+      int n = 0;
+      for (int j=0; j<buttons[i].length/3; j++) {
+        if (j > 0) {
+          n++;
+          buttons[i][n] = new KeyButton(ELLIPSE, 50, 40, 5);
+          buttons[i][n].posX = (j-1)*dispHeight/4 + dispHeight*5/16;
+          buttons[i][n].posY = i * dispWidth/3;
+          buttons[i][n].label = keyLabels[i][n-1];
+          n++;
+          buttons[i][n] = new KeyButton(ELLIPSE, 50, 40, 5);
+          buttons[i][n].posX = (j-1)*dispHeight/4 + dispHeight*5/16;
+          buttons[i][n].posY = (i * dispWidth/3) + dispWidth/6;
+          buttons[i][n].label = keyLabels[i][n-1];
+          n++;
+          buttons[i][n] = new KeyButton(ELLIPSE, 50, 40, 5);
+          buttons[i][n].posX = (j-1)*dispHeight/4 + dispHeight*4/16;
+          buttons[i][n].posY = (i * dispWidth/3) + dispWidth/12;
+          buttons[i][n].label = keyLabels[i][n-1];
+          n++;
+          buttons[i][n] = new KeyButton(ELLIPSE, 50, 40, 5);
+          buttons[i][n].posX = (j-1)*dispHeight/4 + dispHeight*6/16;
+          buttons[i][n].posY = (i * dispWidth/3) + dispWidth/12;
+          buttons[i][n].label = keyLabels[i][n-1];
+        }
+        else {
+          buttons[i][j] = new KeyButton(RECT, dispHeight/4, dispWidth/3, 10);
+          buttons[i][j].posX = 0;
+          buttons[i][j].posY = i * dispWidth / 3;
+          buttons[i][j].label = i==0 ? "Backspace" : i==1 ? "Enter" : "Space";
+        }
+      }
+    }
 }
 
 void draw()
 { 
     background(0);
+    stroke(127, 127, 255);
+    fill(0);
+    rect(30, 20, dispHeight-20, 100, 10);
+    fill(127, 127, 255);
+    textAlign(LEFT);
+    text(myText + "_", 40, 20, dispHeight-30, 100);
     translate(translateX, translateY);
     
     if (klib.read() == true)
     {
         ArrayList<TouchEvent> teList = lookforTouch(klib.frame);      
-        btn1.draw(teList);
-        btn2.draw(teList);
-        btn3.draw(teList);
-        btn4.draw(teList);
-        btn5.draw(teList);
+        for (int i=0; i<buttons.length; i++) {
+          for (int j=0; j<buttons[i].length; j++) {
+            buttons[i][j].draw(teList);
+          }
+        }
         drawTouch(teList);
     }
 }
@@ -83,13 +100,13 @@ void drawTouch(ArrayList<TouchEvent> teList) {
     TouchEvent te = teList.get(i);
     
     stroke(0, 255, 255);
-    if (te.z <= 2) {
+    if (te.z <= touchThreshold) {
       fill(0, 0);
     }
-    else if (te.z > 3 && te.z <= 5) {
+    else if (te.z > touchThreshold && te.z <= pressThreshold) {
       fill(0, 127, 127);
     }
-    else if (te.z > 5) {
+    else if (te.z > pressThreshold) {
       fill(0, 255, 255);
     }
     ellipse(te.x, te.y, touchRadius, touchRadius);    
@@ -102,6 +119,7 @@ public class KeyButton
   private int fillColor = 0;
   private int strokeColor = 0;
   private float textX, textY;
+  private int debounce = 0;
 
   public PShape shape;
   public String label = "";
@@ -126,20 +144,17 @@ public class KeyButton
     switch (type) {
       case RECT:
         shape = createShape(RECT, 0, 0, width - border*2, height - border*2, 5);
-        textX = width/2;
-        textY = height/2 + fontSize/3;
-        break;
-      case TRIANGLE:
-        shape = createShape(TRIANGLE, 0, 0, width - border*2, height - border*2); 
-        textX = width/2 + border;
-        textY = height/2 + border/2 + fontSize/2;
         break;
       case ELLIPSE:
         shape = createShape(ELLIPSE, width/2-border, height/2-border, width - border*2, height - border*2); 
-        textX = width/2;
-        textY = height/2 + fontSize/3;
         break;
     }
+    textX = width/2;
+    textY = height/2 + fontSize/3;
+
+    strokeColor = lightColor;
+    fillColor = dimColor;
+    textColor = priColor;
   }
 
   private boolean evalPoint(float x, float y) {
@@ -166,7 +181,7 @@ public class KeyButton
     if (teList.size() > 0) {
       for (int i=0; i < teList.size(); i++) {
         TouchEvent te = teList.get(i);
-        if (te.z > 5) {
+        if (te.z > pressThreshold) {
           inShape = evalPoint(te.x, te.y);
           break;
         }
@@ -178,14 +193,31 @@ public class KeyButton
     }
     
     if (inShape) {
-      strokeColor = dimColor;
-      fillColor = lightColor;
-      textColor = secColor;
+      if (strokeColor == lightColor) debounce++;
+      else debounce = 0;
+
+      if (debounce > 2) {
+        strokeColor = dimColor;
+        fillColor = lightColor;
+        textColor = secColor;
+        
+        if (label.length() == 1) myText += label;
+        if (label == "Space") myText += " ";
+        if (label == "Enter") myText += "\n";
+        if (label == "Backspace" && myText.length() > 0) myText = myText.substring(0, myText.length()-1);
+        debounce = 0;
+      }
     }
     else {
-      strokeColor = lightColor;
-      fillColor = dimColor;
-      textColor = priColor;
+      if (strokeColor == dimColor) debounce++;
+      else debounce = 0;
+
+      if (debounce > 2) {
+        strokeColor = lightColor;
+        fillColor = dimColor;
+        textColor = priColor;
+        debounce = 0;
+      }
     }
     
     shape.setStroke(strokeColor);
