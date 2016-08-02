@@ -23,8 +23,6 @@ final String keyLabels[][] = {
    "u", "v", "w", "x"}
 };
 
-KeyButton btn1, btn2, btn3, btn4, btn5;
-
 void settings()
 {
   size(dispHeight+translateX*2, dispWidth+translateY);
@@ -37,6 +35,8 @@ void setup()
     klib.init("COM3", "Snowboard", "1610");
     
     klib.start();
+    
+    // create buttons
     for (int i=0; i<buttons.length; i++) {
       int n = 0;
       for (int j=0; j<buttons[i].length/3; j++) {
@@ -75,6 +75,8 @@ void setup()
 void draw()
 { 
     background(0);
+    
+    // draw text input area
     stroke(127, 127, 255);
     fill(0);
     rect(30, 20, dispHeight-20, 100, 10);
@@ -83,14 +85,18 @@ void draw()
     text(myText + "_", 40, 20, dispHeight-30, 100);
     translate(translateX, translateY);
     
+    // read touch data frame
     if (klib.read() == true)
     {
-        ArrayList<TouchEvent> teList = lookforTouch(klib.frame);      
+        // translate touch event
+        ArrayList<TouchEvent> teList = lookforTouch(klib.frame);
+        // draw buttons
         for (int i=0; i<buttons.length; i++) {
           for (int j=0; j<buttons[i].length; j++) {
             buttons[i][j].draw(teList);
           }
         }
+        // draw touches
         drawTouch(teList);
     }
 }
@@ -157,6 +163,7 @@ public class KeyButton
     textColor = priColor;
   }
 
+  // evaluate if a point is within button's area
   private boolean evalPoint(float x, float y) {
     boolean ret = true;
     switch (this.type) {
@@ -178,6 +185,7 @@ public class KeyButton
   public void draw(ArrayList<TouchEvent> teList) {
     boolean inShape = false;
     
+    // check if button is clicked by touch
     if (teList.size() > 0) {
       for (int i=0; i < teList.size(); i++) {
         TouchEvent te = teList.get(i);
@@ -188,10 +196,12 @@ public class KeyButton
       }
     }
 
+    // check if button is clicked by mouse
     if (mousePressed) {
       inShape = inShape | evalPoint(mouseX - translateX, mouseY - translateY);
     }
-    
+
+    // set stroke and fill based on the touch event
     if (inShape) {
       if (strokeColor == lightColor) debounce++;
       else debounce = 0;
@@ -220,10 +230,12 @@ public class KeyButton
       }
     }
     
+    // draw shape
     shape.setStroke(strokeColor);
     shape.setFill(fillColor);
     shape(shape, posX + border, posY + border);
 
+    // draw label
     fill(textColor);
     textSize(fontSize);
     textAlign(CENTER);
