@@ -1,14 +1,10 @@
-final int filter = 3;
-final int dispWidth = 300;
+final int dispWidth = 480;
 final int dispHeight = 480;
 final int senseWidth = 10;
 final int senseHeight = 16;
-final int senseScale = 64;
-final int forceScale = 128;
 final int touchRadius = 25;
-final int touchThreshold = 32;
-final int pressThreshold = 44;
-ArrayList<int[][]> buffer = new ArrayList<int[][]>();
+final int touchThreshold = 16;
+final int pressThreshold = 64;
 
 // test and validation functions
 int[][] genForceMap(int r, int c) {
@@ -53,51 +49,36 @@ class TouchEvent {
 ArrayList<TouchEvent> lookforTouch(int[][] map){
   ArrayList<TouchEvent> teList = new ArrayList<TouchEvent>();
   
-  //println(buffer.size());
-  if (buffer.size() >= 3) buffer.remove(0);
-  buffer.add(map);
-  //printMap(map);
-
-  for (int i = 0; i < map.length; i++) {
-    for (int j = 0; j < map[i].length; j++) {
-      int sum = 0;
-      for (int k = 0; k < buffer.size(); k++) {
-        sum += buffer.get(k)[i][j];
-      }
-      map[i][j] = sum / buffer.size();
-    }
-  }
-
   for (int row = 0; row < map.length; row++){
     for (int col = 0; col < map[row].length; col++){
       boolean touch = true;
       float t = map[row][col];
 
-      // ignore force lower than (1<<filter) and check if surrounded cell has higher force
+      // ignore force lower than touchThreshold/2 and check if surrounded cell has higher force
       // if higher force in surrounded cells, this cell is not a centroid of force, move on to next cell
       // if no higher force in surrounded cells, copy a 3x3 array with current cell as centroid,
       // call evalForcemap() to conver it to a touch event.
-      if (t > 1 << filter) {
+      if (t > touchThreshold/2) {
         if (row > 0) {
-          if (col > 0 && map[row][col] <= map[row-1][col-1]) touch = false;
-          if (map[row][col] <= map[row-1][col]) touch = false;
-          if (col+1 < map[row].length && map[row][col] <= map[row-1][col+1]) touch = false;
+          if (col > 0 && t <= map[row-1][col-1]) touch = false;
+          if (t <= map[row-1][col]) touch = false;
+          if (col+1 < map[row].length && t <= map[row-1][col+1]) touch = false;
         }
 
-        if (col > 0 && map[row][col] <= map[row][col-1]) touch = false;
-        if (col+1 < map[row].length && map[row][col] < map[row][col+1]) touch = false;
+        if (col > 0 && t <= map[row][col-1]) touch = false;
+        if (col+1 < map[row].length && t < map[row][col+1]) touch = false;
 
         if (row+1 < map.length) {
-          if (col > 0 && map[row][col] < map[row+1][col-1]) touch = false;
-          if (map[row][col] < map[row+1][col]) touch = false;
-          if (col+1 < map[row].length && map[row][col] < map[row+1][col+1]) touch = false;
+          if (col > 0 && t < map[row+1][col-1]) touch = false;
+          if (t < map[row+1][col]) touch = false;
+          if (col+1 < map[row].length && t < map[row+1][col+1]) touch = false;
         }
 
         if (touch) {
           int rows = 3;
           int cols = 3;
-
           int[][] tmap = new int[rows][cols];
+        
           for (int i = 0; i < rows; i++){
             for (int j = 0; j < cols; j++){
               int force = 0;
@@ -185,12 +166,12 @@ TouchEvent evalForcemap(ForceMap fm) {
     numerator += w.get(i) * (w.size() - 1 + i) / w.size();
   }
   x = numerator / totalForce;
-  z = peakForce * log(totalForce) / log(peakForce);
+  z = totalForce; //peakForce * log(totalForce) / log(peakForce);
 
-//println(x, y, z, peakForce, senseScale, forceScale);
+//println(x, y, z, peakForce);
   te.x = map(fm.cellX - 1 + x * 2, 0, 1, 0, dispWidth / senseWidth);
   te.y = map(fm.cellY - 1 + y * 2, 0, 1, 0, dispHeight / senseHeight);
-  te.z = map(z, 0, senseScale, 0, forceScale);
+  te.z = z;
 
   return te;
 }
