@@ -22,23 +22,30 @@ int keyCols = 4;
 String[] inText = new String[2];
 char cursor = '_';
 int cursorTimer = 0;
+int animateTextTimer = 0;
+int animateTextSize = 18; 
+float animateTextX = -1; 
+float animateTextY = -1; 
+String animateText = ""; 
+color animateTextAlpha = color(0, 255, 0, 255); 
 KeyButton buttons[][] = new KeyButton[keyRows][keyCols];
+KeyButton actKey = null;
 
 final String[][][] kl1 = {
   {{"Space", "Backspace", "", ""},
   {"1", "2", "3", "4"},
   {"5", "6", "7", "8"},
-  {"9", "0", "x", "z"},
+  {"9", "0", "y", "z"},
   {"", "", "", ""}},
   {{"<-", "->", "", ""},
-  {"p", "b", "t", "d"},
+  {"o", "a", "t", "d"},
   {"e", "i", "m", "n"},
-  {"u", "j", "g", "k"},
+  {"f", "j", "g", "k"},
   {"", "", "", ""}},
   {{"Enter", "", "", ""},
-  {"a", "o", "c", "l"},
+  {"p", "b", "c", "l"},
   {"h", "s", "r", "w"},
-  {"v", "f", "q", "y"},
+  {"u", "v", "q", "x"},
   {"", "", "", ""}}
 };
 
@@ -46,17 +53,17 @@ final String[][][] kl2 = {
   {{"Space", "Backspace", "", ""},
   {"if", "for", "+", "-"},
   {"while", "switch", "*", "/"},
-  {"=", "{}", "x", "z"},
+  {"=", "{}", "y", "z"},
   {"", "", "", ""}},
   {{"<-", "->", "", ""},
-  {"p", "b", "t", "d"},
+  {"o", "a", "t", "d"},
   {"e", "i", "m", "n"},
-  {"u", "j", "g", "k"},
+  {"f", "j", "g", "k"},
   {"", "", "", ""}},
   {{"Enter", "", "", ""},
-  {"a", "o", "c", "l"},
+  {"p", "b", "c", "l"},
   {"h", "s", "r", "w"},
-  {"v", "f", "q", "y"},
+  {"u", "v", "q", "x"},
   {"", "", "", ""}}
 };
 String[][][] keyLabels = kl2;
@@ -73,6 +80,7 @@ void setup() {
   // use an appropriate port number in the line below.
   klib.init("COM3", "Snowboard", "1610");
   klib.start();
+  surface.setTitle("PalmPad");
 
   if (mode == KEYBOARD) {
     // create buttons
@@ -142,6 +150,24 @@ void draw() {
       else if (mode == PAINT) {
         paint(teList);
       }
+      
+      if (animateTextTimer > 0) {
+        textSize(animateTextSize);
+        fill(color(255, 0, 0, animateTextAlpha));
+        text(animateText, animateTextX, animateTextY);
+        animateTextSize += 4;
+        animateTextAlpha -= 10;
+        animateTextTimer--;
+        textSize(18);
+      }
+      else {
+        animateTextX = -1; 
+        animateTextY = -1; 
+        animateText = ""; 
+        animateTextSize = 18;
+        animateTextAlpha = 255;
+      }
+
       // draw touches
       drawTouch(teList);
   }
@@ -374,7 +400,7 @@ public class KeyButton
 
     if (!noTouch) {
       // check if button is clicked by touch
-      if (teList.size() > 0) {
+      if (teList.size() > 0 && (actKey == null || actKey == this)) {
         for (int i=0; i < teList.size(); i++) {
           te = teList.get(i);
           inShape = evalPoint(te.x, te.y);
@@ -384,11 +410,15 @@ public class KeyButton
 
       // set stroke and fill based on the touch event
       if ((touchX >= 0 || inShape) && te != null && te.z > pressThreshold) {
+        for (int i=0; i < teList.size(); i++) {
+          teList.get(i).processed = true;
+        }
+
         if (fillColor != primaryColor) press_debounce++;
         else press_debounce = 0;
         
         if (press_debounce > 2) {
-          te.processed = true;
+          animateTextTimer = 10;
           fillColor = primaryColor;
           strokeColor = backgroundColor;
           textColor = secondaryTextColor;
@@ -397,6 +427,7 @@ public class KeyButton
           timer = 0;
           repeat = 1;
           phase = 0;
+          actKey = this;
           
           if (touchX < 0) touchX = te.x;
           if (touchY < 0) touchY = te.y;
@@ -422,6 +453,53 @@ public class KeyButton
           repeat++;
           int id = (type == DUE_H || type == DUE_V) ? (phase + 1) % 2 : (phase + 3) % 4;
           if (type == UNO) id = 0;
+          
+          animateText = label[id];
+          switch (type) {
+            case UNO:
+              animateTextX = posX + textX;
+              animateTextY = posY + textY;
+              break;
+            case DUE_H:
+              if (id == 0) {
+                animateTextX = posX + textX/2;
+                animateTextY = posY + textY;
+              }
+              else {
+                animateTextX = posX + textX*3/2;
+                animateTextY = posY + textY;
+              }
+              break;
+            case DUE_V:
+              if (id == 0) {
+                animateTextX = posX + textX;
+                animateTextY = posY + textY/2;
+              }
+              else {
+                animateTextX = posX + textX;
+                animateTextY = posY + textY*3/2;
+              }
+              break;
+            case QUATTRO:
+              if (id == 0) {
+                animateTextX = posX + textX;
+                animateTextY = posY + textY/2;
+              }
+              else if (id == 1) {
+                animateTextX = posX + textX;
+                animateTextY = posY + textY*3/2;
+              }
+              else if (id == 2) {
+                animateTextX = posX + textX/2;
+                animateTextY = posY + textY;
+              }
+              else {
+                animateTextX = posX + textX*3/2;
+                animateTextY = posY + textY;
+              }
+              break;
+          }
+          
           if (label[id] == "<-") {
             if (inText[0].length() > 0) {
               inText[1] = inText[0].substring(inText[0].length()-1) + inText[1];
@@ -438,7 +516,9 @@ public class KeyButton
           }
           else if (label[id] == "Space") inText[0] += " ";
           else if (label[id] == "Enter") inText[0] += "\n";
-          else if (label[id] == "Backspace" && inText[0].length() > 0) inText[0] = inText[0].substring(0, inText[0].length()-1);
+          else if (label[id] == "Backspace") {
+            if (inText[0].length() > 0) inText[0] = inText[0].substring(0, inText[0].length()-1);
+          }
           else if (label[id] == "if") {
             inText[0] += "if (";
             inText[1] = ")" + inText[1];
@@ -464,6 +544,10 @@ public class KeyButton
         timer -= repeat/2;
       }
       else if ((touchX >= 0 || inShape) && te != null && te.z > touchThreshold*2) {
+        for (int i=0; i < teList.size(); i++) {
+          teList.get(i).processed = true;
+        }
+
         if (fillColor != secondaryColor) touch_debounce++;
         else touch_debounce = 0;
         
@@ -487,7 +571,6 @@ public class KeyButton
 
         if (touch_debounce > 2) {
           strokeWeight = 3;
-          te.processed = true;
           strokeColor = primaryColor;
           fillColor = secondaryColor;
           textColor = primaryTextColor;
@@ -495,6 +578,7 @@ public class KeyButton
           touch_debounce = 0;
           timer = 0;
           phase = 0;
+          actKey = this;
         }
       }
       else if (fillColor != backgroundColor) {
@@ -510,6 +594,7 @@ public class KeyButton
           touchX = -1;
           touchY = -1;
           phase = 0;
+          actKey = null;
         }
       }
     }

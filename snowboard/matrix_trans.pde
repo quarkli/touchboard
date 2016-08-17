@@ -10,7 +10,7 @@ final int sensorWidth = 10;
 final int sensorHeight = 16;
 final int touchRadius = 25;
 final int touchThreshold = 16;
-final int pressThreshold = 127;
+final int pressThreshold = 160;
 
 //**************************************
 //Start of Test and Validation functions
