@@ -1,8 +1,7 @@
-/* read_snowboard_1610.pde
-    Read and visualize data from Snowboard and 1610 sensor
-    Copyright (c) 2014-2016 Kitronyx http://www.kitronyx.com
-    contact@kitronyx.com
-    GPL V3.0
+/*
+  Author: Quark Li
+  quarkli@gmail.com
+  MIT License
 */
 
 final int UNO = 0;
@@ -62,16 +61,14 @@ final String[][][] kl2 = {
 };
 String[][][] keyLabels = kl2;
 
-void settings()
-{
+void settings() {
   scnWidth = drawHeight;
   scnHeight = drawWidth;
   size(scnWidth + translateX * 2,  scnHeight + translateY);
   inText[0] = inText[1] = "";
 }
 
-void setup()
-{
+void setup() {
   klib = new KLib(this);
   // use an appropriate port number in the line below.
   klib.init("COM3", "Snowboard", "1610");
@@ -107,62 +104,61 @@ void setup()
   }
 }
 
-void draw()
-{
-    background(0);
-    
-    if (cursorTimer < 10) {
-      cursorTimer++;
-    }
-    else {
-      cursorTimer = 0;
-      if (cursor == '_') cursor =  ' ';
-      else cursor = '_';
-    }
+void draw() {
+  background(0);
 
-    // draw text input area
-    stroke(127, 127, 255);
-    fill(0);
-    rect(30, 20, scnWidth-20, 100, 10);
-    fill(127, 127, 255);
-    textAlign(LEFT);
-    text(inText[0] + cursor + inText[1], 40, 20, scnWidth-30, 100);
-    translate(translateX, translateY);
+  if (cursorTimer < 10) {
+    cursorTimer++;
+  }
+  else {
+    cursorTimer = 0;
+    if (cursor == '_') cursor =  ' ';
+    else cursor = '_';
+  }
 
-    // read touch data frame
-    if (klib.read() == true)
-    {
-        // translate touch event
-        ArrayList<TouchEvent> teList = lookforTouch(klib.frame);
-        
-        if (mode == KEYBOARD) {
-          // draw buttons
-          for (int i=0; i<buttons.length; i++) {
-            for (int j=0; j<buttons[i].length; j++) {
-              buttons[i][j].draw(teList);
-            }
+  // draw text input area
+  stroke(127, 127, 255);
+  fill(0);
+  rect(30, 20, scnWidth-20, 100, 10);
+  fill(127, 127, 255);
+  textAlign(LEFT);
+  text(inText[0] + cursor + inText[1], 40, 20, scnWidth-30, 100);
+  translate(translateX, translateY);
+
+  // read touch data frame
+  if (klib.read() == true)
+  {
+      // translate touch event
+      ArrayList<TouchEvent> teList = lookforTouch(klib.frame);
+
+      if (mode == KEYBOARD) {
+        // draw buttons
+        for (int i=0; i<buttons.length; i++) {
+          for (int j=0; j<buttons[i].length; j++) {
+            buttons[i][j].draw(teList);
           }
         }
-        else if (mode == PAINT) {
-          paint(teList);
-        }
-        // draw touches
-        drawTouch(teList);
-    }
+      }
+      else if (mode == PAINT) {
+        paint(teList);
+      }
+      // draw touches
+      drawTouch(teList);
+  }
 }
 
-int debounce = 0;
+int paint_debounce = 0;
 ArrayList<TouchEvent> paintList = new ArrayList<TouchEvent>();
 void paint(ArrayList<TouchEvent> teList) {
   if (teList.size() == 0) {
     if (paintList.size() > 0 && paintList.get(paintList.size()-1).processed == false) {
-      debounce++; 
+      paint_debounce++;
     }
     else {
-      debounce = 0; 
+      paint_debounce = 0;
     }
-    
-    if (debounce > 2) {
+
+    if (paint_debounce > 2) {
       TouchEvent tmp = new TouchEvent();
       tmp.x = 0;
       tmp.y = 0;
@@ -172,31 +168,31 @@ void paint(ArrayList<TouchEvent> teList) {
   }
   else {
     TouchEvent te = teList.get(0);
-    
+
     if (paintList.size() > 0 && paintList.get(paintList.size()-1).processed == false) {
       if (te.z < touchThreshold*2) {
-        debounce++;
+        paint_debounce++;
       }
       else {
-        debounce = 0;
+        paint_debounce = 0;
       }
-      
-      if (debounce > 2) {
+
+      if (paint_debounce > 2) {
         te.processed = true;
-        debounce = 0;
+        paint_debounce = 0;
       }
     }
     else {
       if (te.z >= touchThreshold*2) {
-        debounce++;
+        paint_debounce++;
       }
       else {
-        debounce = 0;
+        paint_debounce = 0;
       }
-      
-      if (debounce > 2) {
+
+      if (paint_debounce > 2) {
         te.processed = false;
-        debounce = 0;
+        paint_debounce = 0;
       }
     }
     paintList.add(te);
@@ -220,7 +216,7 @@ void paint(ArrayList<TouchEvent> teList) {
 void drawTouch(ArrayList<TouchEvent> teList) {
   for (int i=0; i < teList.size(); i++) {
     TouchEvent te = teList.get(i);
-    
+
     if (te.processed == true) continue;
 
     stroke(255, 127, 127);
@@ -249,7 +245,8 @@ public class KeyButton
   private float textX, textY;
   private float touchX = -1, touchY = -1;
   private int phase = 0;
-  private int debounce = 0;
+  private int touch_debounce = 0;
+  private int press_debounce = 0;
   private int strokeWeight = 1;
   private color primaryColor = color(255, 255, 255);
   private color secondaryColor = color(255, 255, 255, 127);
@@ -369,11 +366,11 @@ public class KeyButton
     return ret;
   }
 
-  int timer = 10;
+  int timer = 0;
+  int repeat = 1;
   public void draw(ArrayList<TouchEvent> teList) {
     TouchEvent te = null;
     boolean inShape = false;
-    strokeWeight = 1;
 
     if (!noTouch) {
       // check if button is clicked by touch
@@ -386,95 +383,129 @@ public class KeyButton
       }
 
       // set stroke and fill based on the touch event
-      if (inShape && te != null && te.z > touchThreshold*2) {
-        strokeWeight += 2;
-        fillColor = secondaryColor;
-        te.processed = true;
+      if ((touchX >= 0 || inShape) && te != null && te.z > pressThreshold) {
+        if (fillColor != primaryColor) press_debounce++;
+        else press_debounce = 0;
+        
+        if (press_debounce > 2) {
+          te.processed = true;
+          fillColor = primaryColor;
+          strokeColor = backgroundColor;
+          textColor = secondaryTextColor;
+          press_debounce = 0;
+          touch_debounce = 0;
+          timer = 0;
+          repeat = 1;
+          phase = 0;
+          
+          if (touchX < 0) touchX = te.x;
+          if (touchY < 0) touchY = te.y;
+
+          if (type != UNO) {
+            if (abs(te.x - touchX) - abs(te.y - touchY) > 5) {
+              if (type == DUE_H || type == QUATTRO) {
+                if (te.x - touchX > 5) phase = 4;
+                else if (te.x - touchX < -5) phase = 3;
+              }
+            }
+            else if (abs(te.x - touchX) - abs(te.y - touchY) < -5){
+              if (type == DUE_V || type == QUATTRO) {
+                if (te.y - touchY > 5) phase = 2;
+                else if (te.y - touchY < -5) phase = 1;
+              }
+            }
+          }
+        }
+
+        if (strokeColor == backgroundColor && timer <= 0) {
+          timer = 20;
+          repeat++;
+          int id = (type == DUE_H || type == DUE_V) ? (phase + 1) % 2 : (phase + 3) % 4;
+          if (type == UNO) id = 0;
+          if (label[id] == "<-") {
+            if (inText[0].length() > 0) {
+              inText[1] = inText[0].substring(inText[0].length()-1) + inText[1];
+              if (inText[0].length() > 1) inText[0] = inText[0].substring(0, inText[0].length()-1);
+              else inText[0] = "";
+            }
+          }
+          else if (label[id] == "->") {
+            if (inText[1].length() > 0) {
+              inText[0] = inText[0] + inText[1].substring(0, 1);
+              if (inText[1].length() > 1) inText[1] = inText[1].substring(1);
+              else inText[1] = "";
+            }
+          }
+          else if (label[id] == "Space") inText[0] += " ";
+          else if (label[id] == "Enter") inText[0] += "\n";
+          else if (label[id] == "Backspace" && inText[0].length() > 0) inText[0] = inText[0].substring(0, inText[0].length()-1);
+          else if (label[id] == "if") {
+            inText[0] += "if (";
+            inText[1] = ")" + inText[1];
+          }
+          else if (label[id] == "for") {
+            inText[0] += "for (";
+            inText[1] = ")" + inText[1];
+          }
+          else if (label[id] == "while") {
+            inText[0] += "while (";
+            inText[1] = ")" + inText[1];
+          }
+          else if (label[id] == "if") {
+            inText[0] += "switch (";
+            inText[1] = ")" + inText[1];
+          }
+          else if (label[id] == "{}") {
+            inText[0] += "{";
+            inText[1] = "}" + inText[1];
+          }
+          else inText[0] += label[id];
+        }
+        timer -= repeat/2;
+      }
+      else if ((touchX >= 0 || inShape) && te != null && te.z > touchThreshold*2) {
+        if (fillColor != secondaryColor) touch_debounce++;
+        else touch_debounce = 0;
+        
         if (touchX < 0) touchX = te.x;
         if (touchY < 0) touchY = te.y;
+
         if (type != UNO) {
-          if (abs(te.x - touchX) > abs(te.y - touchY)) {
+          if (abs(te.x - touchX) - abs(te.y - touchY) > 5) {
             if (type == DUE_H || type == QUATTRO) {
-              if (te.x - touchX > 0) phase = 4;
-              else phase = 3;
+              if (te.x - touchX > 5) phase = 4;
+              else if (te.x - touchX < -5) phase = 3;
             }
           }
-          else {
+          else if (abs(te.x - touchX) - abs(te.y - touchY) < -5){
             if (type == DUE_V || type == QUATTRO) {
-              if (te.y - touchY > 0) phase = 2;
-              else phase = 1;
+              if (te.y - touchY > 5) phase = 2;
+              else if (te.y - touchY < -5) phase = 1;
             }
           }
         }
 
-        if (te.z > pressThreshold) {
-          fillColor = primaryColor;
-
-          if (strokeColor == primaryColor) debounce++;
-          else debounce = 0;
-  
-          if (debounce > 2) {
-            strokeColor = backgroundColor;
-            textColor = secondaryTextColor;
-            debounce = 0;
-            timer = 0;
-          }
-  
-          if (strokeColor == backgroundColor && timer == 0) {
-            timer = 20;
-            int id = (type == DUE_H || type == DUE_V) ? (phase + 1) % 2 : (phase + 3) % 4;
-            if (type == UNO) id = 0;
-            if (label[id] == "<-") {
-              if (inText[0].length() > 0) {
-                inText[1] = inText[0].substring(inText[0].length()-1) + inText[1];
-                if (inText[0].length() > 1) inText[0] = inText[0].substring(0, inText[0].length()-1);
-                else inText[0] = "";
-              }
-            }
-            else if (label[id] == "->") {
-              if (inText[1].length() > 0) {
-                inText[0] = inText[0] + inText[1].substring(0, 1);
-                if (inText[1].length() > 1) inText[1] = inText[1].substring(1);
-                else inText[1] = "";
-              }
-            }
-            else if (label[id] == "Space") inText[0] += " ";
-            else if (label[id] == "Enter") inText[0] += "\n";
-            else if (label[id] == "Backspace" && inText[0].length() > 0) inText[0] = inText[0].substring(0, inText[0].length()-1);
-            else if (label[id] == "if") {
-              inText[0] += "if (";
-              inText[1] = ")" + inText[1];
-            }
-            else if (label[id] == "for") {
-              inText[0] += "for (";
-              inText[1] = ")" + inText[1];
-            }
-            else if (label[id] == "while") {
-              inText[0] += "while (";
-              inText[1] = ")" + inText[1];
-            }
-            else if (label[id] == "if") {
-              inText[0] += "switch (";
-              inText[1] = ")" + inText[1];
-            }
-            else if (label[id] == "{}") {
-              inText[0] += "{";
-              inText[1] = "}" + inText[1];
-            }
-            else inText[0] += label[id];
-          }
-          timer--;
+        if (touch_debounce > 2) {
+          strokeWeight = 3;
+          te.processed = true;
+          strokeColor = primaryColor;
+          fillColor = secondaryColor;
+          textColor = primaryTextColor;
+          press_debounce = 0;
+          touch_debounce = 0;
+          timer = 0;
+          phase = 0;
         }
       }
-      else {
-        if (strokeColor == backgroundColor) debounce++;
-        else debounce = 0;
+      else if (fillColor != backgroundColor) {
+        touch_debounce++;
 
-        if (debounce > 2) {
+        if (touch_debounce > 2) {
+          strokeWeight = 1;
           strokeColor = primaryColor;
           fillColor = backgroundColor;
           textColor = primaryTextColor;
-          debounce = 0;
+          press_debounce = 0;
           timer = 0;
           touchX = -1;
           touchY = -1;
@@ -538,7 +569,7 @@ public class KeyButton
         text(label[3], posX + textX*3/2, posY + textY);
         break;
     }
-    
+
     fill(0);
   }
 }

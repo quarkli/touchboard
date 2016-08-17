@@ -1,3 +1,9 @@
+/*
+  Author: Quark Li
+  quarkli@gmail.com
+  MIT License
+*/
+
 final int drawWidth = 360;
 final int drawHeight = 480;
 final int sensorWidth = 10;
@@ -50,7 +56,16 @@ class TouchEvent {
   float y;
   float z;
   boolean processed = false;
+  //Point origin;
+  //Point mark;
+  //Point current;
+  //float force;
 }
+
+//class Point {
+//  float x;
+//  float y;
+//}
 
 ArrayList<TouchEvent> lookforTouch(int[][] map){
   ArrayList<TouchEvent> teList = new ArrayList<TouchEvent>();
@@ -111,7 +126,7 @@ ArrayList<TouchEvent> lookforTouch(int[][] map){
       }
     }
   }
-
+  
   return teList;
 }
 
