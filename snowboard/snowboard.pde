@@ -5,144 +5,239 @@
     GPL V3.0
 */
 
+final int UNO = 0;
+final int DUE_H = 1;
+final int DUE_V = 2;
+final int QUATTRO = 3;
+final int KEYBOARD = 0;
+final int PAINT = 1;
+
 KLib klib;
+int mode = KEYBOARD;
 int translateX = 20;
 int translateY = 160;
-int keyRows = 4;
+int scnWidth = 0;
+int scnHeight = 0;
+int keyRows = 3;
 int keyCols = 4;
-String myText = "";
+String[] inText = new String[2];
+char cursor = '_';
+int cursorTimer = 0;
 KeyButton buttons[][] = new KeyButton[keyRows][keyCols];
 
-final String keyLabels[][] = {
-  {"1", "2", "3", "4",
-   "5", "6", "7", "8",
-   "9", "0", "y", "z"},
-  {"a", "b", "c", "d",
-   "e", "f", "g", "h",
-   "m", "n", "o", "p"},
-  {"q", "r", "s", "t",
-   "i", "j", "k", "l",
-   "u", "v", "w", "x"}
+final String[][][] kl1 = {
+  {{"Space", "Backspace", "", ""},
+  {"1", "2", "3", "4"},
+  {"5", "6", "7", "8"},
+  {"9", "0", "x", "z"},
+  {"", "", "", ""}},
+  {{"<-", "->", "", ""},
+  {"p", "b", "t", "d"},
+  {"e", "i", "m", "n"},
+  {"u", "j", "g", "k"},
+  {"", "", "", ""}},
+  {{"Enter", "", "", ""},
+  {"a", "o", "c", "l"},
+  {"h", "s", "r", "w"},
+  {"v", "f", "q", "y"},
+  {"", "", "", ""}}
 };
+
+final String[][][] kl2 = {
+  {{"Space", "Backspace", "", ""},
+  {"if", "for", "+", "-"},
+  {"while", "switch", "*", "/"},
+  {"=", "{}", "x", "z"},
+  {"", "", "", ""}},
+  {{"<-", "->", "", ""},
+  {"p", "b", "t", "d"},
+  {"e", "i", "m", "n"},
+  {"u", "j", "g", "k"},
+  {"", "", "", ""}},
+  {{"Enter", "", "", ""},
+  {"a", "o", "c", "l"},
+  {"h", "s", "r", "w"},
+  {"v", "f", "q", "y"},
+  {"", "", "", ""}}
+};
+String[][][] keyLabels = kl2;
 
 void settings()
 {
-  size(dispHeight+translateX*2, dispWidth+translateY);
+  scnWidth = drawHeight;
+  scnHeight = drawWidth;
+  size(scnWidth + translateX * 2,  scnHeight + translateY);
+  inText[0] = inText[1] = "";
 }
 
 void setup()
 {
-    klib = new KLib(this);
-    // use an appropriate port number in the line below.
-    klib.init("COM3", "Snowboard", "1610");
-    
-    klib.start();
-    
-  if (false) {
+  klib = new KLib(this);
+  // use an appropriate port number in the line below.
+  klib.init("COM3", "Snowboard", "1610");
+  klib.start();
+
+  if (mode == KEYBOARD) {
     // create buttons
     for (int i=0; i<keyRows; i++) {
       int n = 0;
       for (int j=0; j<keyCols; j++) {
-        //if (j > 0) {
-        //  n++;
-        //  buttons[i][n] = new KeyButton(ELLIPSE, 50, 40, 5);
-        //  buttons[i][n].posX = (j-1)*dispHeight/4 + dispHeight*5/16;
-        //  buttons[i][n].posY = i * dispWidth/3;
-        //  buttons[i][n].label = keyLabels[i][n-1];
-        //  buttons[i][n].noTouch = true;
-        //  n++;
-        //  buttons[i][n] = new KeyButton(ELLIPSE, 50, 40, 5);
-        //  buttons[i][n].posX = (j-1)*dispHeight/4 + dispHeight*5/16;
-        //  buttons[i][n].posY = (i * dispWidth/3) + dispWidth/6;
-        //  buttons[i][n].label = keyLabels[i][n-1];
-        //  buttons[i][n].noTouch = true;
-        //  n++;
-        //  buttons[i][n] = new KeyButton(ELLIPSE, 50, 40, 5);
-        //  buttons[i][n].posX = (j-1)*dispHeight/4 + dispHeight*4/16;
-        //  buttons[i][n].posY = (i * dispWidth/3) + dispWidth/12;
-        //  buttons[i][n].label = keyLabels[i][n-1];
-        //  buttons[i][n].noTouch = true;
-        //  n++;
-        //  buttons[i][n] = new KeyButton(ELLIPSE, 50, 40, 5);
-        //  buttons[i][n].posX = (j-1)*dispHeight/4 + dispHeight*6/16;
-        //  buttons[i][n].posY = (i * dispWidth/3) + dispWidth/12;
-        //  buttons[i][n].label = keyLabels[i][n-1];
-        //  buttons[i][n].noTouch = true;
-        //}
-        //else {
-          buttons[i][j] = new KeyButton(RECT, dispHeight/keyCols, dispWidth/keyRows, 10);
-          buttons[i][j].posX = j * dispHeight / keyCols;
-          buttons[i][j].posY = i * dispWidth / keyRows;
-          buttons[i][j].label = "" + (i*keyCols+j+1); //i==0 ? "Backspace" : i==1 ? "Enter" : "Space";
-        //}
+        if (j > 0) {
+          buttons[i][j] = new KeyButton(QUATTRO, scnWidth/keyCols, scnHeight/keyRows, 10);
+        }
+        else {
+          if (i > 1) {
+            buttons[i][j] = new KeyButton(UNO, scnWidth/keyCols, scnHeight/keyRows, 10);
+          }
+          else if (i > 0) {
+            buttons[i][j] = new KeyButton(DUE_H, scnWidth/keyCols, scnHeight/keyRows, 10);
+          }
+          else {
+            buttons[i][j] = new KeyButton(DUE_V, scnWidth/keyCols, scnHeight/keyRows, 10);
+          }
+        }
+        buttons[i][j].posX = j * scnWidth / keyCols;
+        buttons[i][j].posY = i * scnHeight / keyRows;
+        buttons[i][j].label[0] = keyLabels[i][j][0];
+        buttons[i][j].label[1] = keyLabels[i][j][1];
+        buttons[i][j].label[2] = keyLabels[i][j][2];
+        buttons[i][j].label[3] = keyLabels[i][j][3];
       }
     }
   }
 }
 
-int startX = -1, startY = -1;
-TouchEvent actTe;
 void draw()
-{ 
+{
     background(0);
     
+    if (cursorTimer < 10) {
+      cursorTimer++;
+    }
+    else {
+      cursorTimer = 0;
+      if (cursor == '_') cursor =  ' ';
+      else cursor = '_';
+    }
+
     // draw text input area
     stroke(127, 127, 255);
     fill(0);
-    rect(30, 20, dispHeight-20, 100, 10);
+    rect(30, 20, scnWidth-20, 100, 10);
     fill(127, 127, 255);
     textAlign(LEFT);
-    text(myText + "_", 40, 20, dispHeight-30, 100);
+    text(inText[0] + cursor + inText[1], 40, 20, scnWidth-30, 100);
     translate(translateX, translateY);
-    
+
     // read touch data frame
     if (klib.read() == true)
     {
         // translate touch event
         ArrayList<TouchEvent> teList = lookforTouch(klib.frame);
-        // draw buttons
-        //for (int i=0; i<buttons.length; i++) {
-        //  for (int j=0; j<buttons[i].length; j++) {
-        //    buttons[i][j].draw(teList);
-        //  }
-        //}
+        
+        if (mode == KEYBOARD) {
+          // draw buttons
+          for (int i=0; i<buttons.length; i++) {
+            for (int j=0; j<buttons[i].length; j++) {
+              buttons[i][j].draw(teList);
+            }
+          }
+        }
+        else if (mode == PAINT) {
+          paint(teList);
+        }
         // draw touches
-        fill(0);
-        if (mousePressed) {
-          if (startX < 0) startX = mouseX;
-          if (startY < 0) startY = mouseY;
-          fill(255);
-        }
-        else {
-          startX = -1;
-          startY = -1;
-        }
-        ellipse(dispHeight/2, dispWidth/2, 50, 50);
-        if (startX > 0 && startY > 0) line(dispHeight/2, dispWidth/2, dispHeight/2+mouseX-startX, dispWidth/2+mouseY-startY);
         drawTouch(teList);
     }
+}
+
+int debounce = 0;
+ArrayList<TouchEvent> paintList = new ArrayList<TouchEvent>();
+void paint(ArrayList<TouchEvent> teList) {
+  if (teList.size() == 0) {
+    if (paintList.size() > 0 && paintList.get(paintList.size()-1).processed == false) {
+      debounce++; 
+    }
+    else {
+      debounce = 0; 
+    }
+    
+    if (debounce > 2) {
+      TouchEvent tmp = new TouchEvent();
+      tmp.x = 0;
+      tmp.y = 0;
+      tmp.processed = true;
+      paintList.add(tmp);
+    }
+  }
+  else {
+    TouchEvent te = teList.get(0);
+    
+    if (paintList.size() > 0 && paintList.get(paintList.size()-1).processed == false) {
+      if (te.z < touchThreshold*2) {
+        debounce++;
+      }
+      else {
+        debounce = 0;
+      }
+      
+      if (debounce > 2) {
+        te.processed = true;
+        debounce = 0;
+      }
+    }
+    else {
+      if (te.z >= touchThreshold*2) {
+        debounce++;
+      }
+      else {
+        debounce = 0;
+      }
+      
+      if (debounce > 2) {
+        te.processed = false;
+        debounce = 0;
+      }
+    }
+    paintList.add(te);
+  }
+
+  for (int j=1; j<paintList.size(); j++) {
+    if (j > 0) {
+      TouchEvent prev = paintList.get(j-1);
+      TouchEvent cur = paintList.get(j);
+      if (!prev.processed && !cur.processed) {
+        float r = map(prev.z, touchThreshold*3, 256, 0, touchRadius*2);
+        if (r < 0) r = 0;
+        strokeWeight(r);
+        line(prev.x, prev.y, cur.x, cur.y);
+      }
+    }
+  }
+  strokeWeight(1);
 }
 
 void drawTouch(ArrayList<TouchEvent> teList) {
   for (int i=0; i < teList.size(); i++) {
     TouchEvent te = teList.get(i);
     
+    if (te.processed == true) continue;
+
     stroke(255, 127, 127);
     if (te.z > touchThreshold*2 && te.z <= pressThreshold) {
       fill(127, 63, 63);
     }
     else if (te.z > pressThreshold) {
       fill(255, 127, 127);
-      actTe = te;
     }
     else {
       fill(0, 0);
     }
     float r = map(te.z, 0, 128, 0, touchRadius);
     if (r > touchRadius) r = touchRadius;
-    line(te.x+touchRadius/2-r, te.y, te.x+r-touchRadius/2, te.y);
-    line(te.x, te.y+touchRadius/2-r, te.x, te.y+r-touchRadius/2);
-    ellipse(te.x, te.y, r, r);    
+    line(te.x+touchRadius-r, te.y, te.x+r-touchRadius, te.y);
+    line(te.x, te.y+touchRadius-r, te.x, te.y+r-touchRadius);
+    ellipse(te.x, te.y, r, r);
   }
 }
 
@@ -152,10 +247,20 @@ public class KeyButton
   private int fillColor = 0;
   private int strokeColor = 0;
   private float textX, textY;
+  private float touchX = -1, touchY = -1;
+  private int phase = 0;
   private int debounce = 0;
+  private int strokeWeight = 1;
+  private color primaryColor = color(255, 255, 255);
+  private color secondaryColor = color(255, 255, 255, 127);
+  private color backgroundColor = color(0, 0, 0, 255);
+  private color primaryTransparent = color(0, 0, 0, 1);
+  private color primaryTextColor = color(0, 255, 0);
+  private color secondaryTextColor = color(0, 127, 0);
 
   public PShape shape;
-  public String label = "";
+  public PShape up, down, left, right, outter;
+  public String[] label = new String[4];
   public int type = 0;
   public int posX = 0;
   public int posY = 0;
@@ -164,120 +269,276 @@ public class KeyButton
   public int border = 0;
   public int fontSize = 18;
   public boolean noTouch = false;
-  public color lightColor = color(255, 255, 255);
-  public color dimColor = color(0, 0, 0);
-  public color priColor = color(0, 255, 0);
-  public color secColor = color(0, 127, 0); 
-  
+
   public KeyButton(int type, int width, int height, int border) {
     this.type = type;
     this.width = width;
     this.height = height;
     this.border = border;
-    
+
     switch (type) {
+      case UNO:
       case RECT:
         shape = createShape(RECT, 0, 0, width - border*2, height - border*2, 5);
         break;
-      case ELLIPSE:
-        shape = createShape(ELLIPSE, width/2-border, height/2-border, width - border*2, height - border*2); 
+      case DUE_H:
+        shape = createShape(GROUP);
+        left = createShape(RECT, 0, 0, (width - border*2)/2, height - border*2, 5);
+        left.setFill(backgroundColor);
+        left.setStroke(secondaryColor);
+        right = createShape(RECT, (width - border*2)/2, 0, (width - border*2)/2, height - border*2, 5);
+        right.setFill(backgroundColor);
+        right.setStroke(secondaryColor);
+        outter = createShape(RECT, 0, 0, width - border*2, height - border*2, 5);
+        outter.setFill(primaryTransparent);
+        outter.setStroke(primaryColor);
+        outter.setStrokeWeight(1);
+        shape.addChild(left);
+        shape.addChild(right);
+        shape.addChild(outter);
+        break;
+      case DUE_V:
+        shape = createShape(GROUP);
+        up = createShape(RECT, 0, 0, width - border*2, (height - border*2)/2, 5);
+        up.setFill(backgroundColor);
+        up.setStroke(secondaryColor);
+        down = createShape(RECT, 0, (height - border*2)/2, width - border*2, (height - border*2)/2, 5);
+        down.setFill(backgroundColor);
+        down.setStroke(secondaryColor);
+        outter = createShape(RECT, 0, 0, width - border*2, height - border*2, 5);
+        outter.setFill(primaryTransparent);
+        outter.setStroke(primaryColor);
+        outter.setStrokeWeight(1);
+        shape.addChild(up);
+        shape.addChild(down);
+        shape.addChild(outter);
+        break;
+      case QUATTRO:
+        shape = createShape(GROUP);
+        //up = createShape(RECT, 0, 0, width - border*2, (height - border*2)/3, 5);
+        up = createShape(TRIANGLE, 0, 0, width - border*2, 0, (width - border*2)/2, (height - border*2)/2);
+        up.setFill(backgroundColor);
+        up.setStroke(secondaryColor);
+        //down = createShape(RECT, 0, (height - border*2)*2/3, width - border*2, (height - border*2)/3, 5);
+        down = createShape(TRIANGLE, 0, height - border*2, width - border*2, height - border*2, (width - border*2)/2, (height - border*2)/2);
+        down.setFill(backgroundColor);
+        down.setStroke(secondaryColor);
+        //left = createShape(RECT, 0, (height - border*2)/3, (width - border*2)/2, (height - border*2)/3, 5);
+        left = createShape(TRIANGLE, 0, 0, 0, height - border*2, (width - border*2)/2, (height - border*2)/2);
+        left.setFill(backgroundColor);
+        left.setStroke(secondaryColor);
+        //right = createShape(RECT, (width - border*2)/2, (height - border*2)/3, (width - border*2)/2, (height - border*2)/3, 5);
+        right = createShape(TRIANGLE, width - border*2, 0, width - border*2, height - border*2, (width - border*2)/2, (height - border*2)/2);
+        right.setFill(backgroundColor);
+        right.setStroke(secondaryColor);
+        outter = createShape(RECT, 0, 0, width - border*2, height - border*2, 5);
+        outter.setFill(primaryTransparent);
+        outter.setStroke(primaryColor);
+        outter.setStrokeWeight(1);
+        shape.addChild(up);
+        shape.addChild(down);
+        shape.addChild(left);
+        shape.addChild(right);
+        shape.addChild(outter);
         break;
     }
+
     textX = width/2;
     textY = height/2 + fontSize/3;
-
-    strokeColor = lightColor;
-    fillColor = dimColor;
-    textColor = priColor;
+    strokeColor = primaryColor;
+    fillColor = backgroundColor;
+    textColor = primaryTextColor;
   }
 
   // evaluate if a point is within button's area
   private boolean evalPoint(float x, float y) {
     boolean ret = true;
     switch (this.type) {
+      case ELLIPSE:
+        ret = ret & pow((x-posX-width/2) * 2 / (width-border*2), 2) + pow((y-posY-height/2) * 2 / (height-border*2), 2) <= 1;
+        break;
+      case UNO:
       case RECT:
+      default:
         ret = ret & (x >= posX + border);
         ret = ret & (x <= posX + width - border);
         ret = ret & (y >= posY + border);
         ret = ret & (y <= posY + height - border);
         break;
-      case ELLIPSE:
-        ret = ret & pow((x-posX-width/2) * 2 / (width-border*2), 2) + pow((y-posY-height/2) * 2 / (height-border*2), 2) <= 1;
-        break;
-      case TRIANGLE:
-        break;
     }
     return ret;
   }
-  
+
   int timer = 10;
   public void draw(ArrayList<TouchEvent> teList) {
+    TouchEvent te = null;
     boolean inShape = false;
-    
+    strokeWeight = 1;
+
     if (!noTouch) {
       // check if button is clicked by touch
       if (teList.size() > 0) {
         for (int i=0; i < teList.size(); i++) {
-          TouchEvent te = teList.get(i);
-          if (te.z > pressThreshold) {
-            inShape = evalPoint(te.x, te.y);
-            break;
+          te = teList.get(i);
+          inShape = evalPoint(te.x, te.y);
+          if (inShape) break;
+        }
+      }
+
+      // set stroke and fill based on the touch event
+      if (inShape && te != null && te.z > touchThreshold*2) {
+        strokeWeight += 2;
+        fillColor = secondaryColor;
+        te.processed = true;
+        if (touchX < 0) touchX = te.x;
+        if (touchY < 0) touchY = te.y;
+        if (type != UNO) {
+          if (abs(te.x - touchX) > abs(te.y - touchY)) {
+            if (type == DUE_H || type == QUATTRO) {
+              if (te.x - touchX > 0) phase = 4;
+              else phase = 3;
+            }
+          }
+          else {
+            if (type == DUE_V || type == QUATTRO) {
+              if (te.y - touchY > 0) phase = 2;
+              else phase = 1;
+            }
           }
         }
-      }
+
+        if (te.z > pressThreshold) {
+          fillColor = primaryColor;
+
+          if (strokeColor == primaryColor) debounce++;
+          else debounce = 0;
   
-      // check if button is clicked by mouse
-      if (mousePressed) {
-        inShape = inShape | evalPoint(mouseX - translateX, mouseY - translateY);
-      }
+          if (debounce > 2) {
+            strokeColor = backgroundColor;
+            textColor = secondaryTextColor;
+            debounce = 0;
+            timer = 0;
+          }
   
-      // set stroke and fill based on the touch event
-      if (inShape) {
-        if (strokeColor == lightColor) debounce++;
-        else debounce = 0;
-  
-        if (debounce > 2) {
-          strokeColor = dimColor;
-          fillColor = lightColor;
-          textColor = secColor;
-          debounce = 0;
-          timer = 0;
+          if (strokeColor == backgroundColor && timer == 0) {
+            timer = 20;
+            int id = (type == DUE_H || type == DUE_V) ? (phase + 1) % 2 : (phase + 3) % 4;
+            if (type == UNO) id = 0;
+            if (label[id] == "<-") {
+              if (inText[0].length() > 0) {
+                inText[1] = inText[0].substring(inText[0].length()-1) + inText[1];
+                if (inText[0].length() > 1) inText[0] = inText[0].substring(0, inText[0].length()-1);
+                else inText[0] = "";
+              }
+            }
+            else if (label[id] == "->") {
+              if (inText[1].length() > 0) {
+                inText[0] = inText[0] + inText[1].substring(0, 1);
+                if (inText[1].length() > 1) inText[1] = inText[1].substring(1);
+                else inText[1] = "";
+              }
+            }
+            else if (label[id] == "Space") inText[0] += " ";
+            else if (label[id] == "Enter") inText[0] += "\n";
+            else if (label[id] == "Backspace" && inText[0].length() > 0) inText[0] = inText[0].substring(0, inText[0].length()-1);
+            else if (label[id] == "if") {
+              inText[0] += "if (";
+              inText[1] = ")" + inText[1];
+            }
+            else if (label[id] == "for") {
+              inText[0] += "for (";
+              inText[1] = ")" + inText[1];
+            }
+            else if (label[id] == "while") {
+              inText[0] += "while (";
+              inText[1] = ")" + inText[1];
+            }
+            else if (label[id] == "if") {
+              inText[0] += "switch (";
+              inText[1] = ")" + inText[1];
+            }
+            else if (label[id] == "{}") {
+              inText[0] += "{";
+              inText[1] = "}" + inText[1];
+            }
+            else inText[0] += label[id];
+          }
+          timer--;
         }
-          
-        if (strokeColor == dimColor && timer == 0) {
-          timer = 10;
-          if (label.length() == 1) myText += label;
-          if (label == "Space") myText += " ";
-          if (label == "Enter") myText += "\n";
-          if (label == "Backspace" && myText.length() > 0) myText = myText.substring(0, myText.length()-1);
-        }
-        timer--;
       }
       else {
-        if (strokeColor == dimColor) debounce++;
+        if (strokeColor == backgroundColor) debounce++;
         else debounce = 0;
-  
+
         if (debounce > 2) {
-          strokeColor = lightColor;
-          fillColor = dimColor;
-          textColor = priColor;
+          strokeColor = primaryColor;
+          fillColor = backgroundColor;
+          textColor = primaryTextColor;
           debounce = 0;
           timer = 0;
+          touchX = -1;
+          touchY = -1;
+          phase = 0;
         }
       }
     }
-    
+
     // draw shape
-    shape.setStroke(strokeColor);
-    shape.setFill(fillColor);
+    int child = shape.getChildCount();
+    if (child > 0) {
+      shape.getChild(child-1).setStrokeWeight(strokeWeight);
+      for (int i=0; i<shape.getChildCount()-1; i++) {
+        shape.getChild(i).setFill(backgroundColor);
+      }
+      switch (phase) {
+        case 1:
+          if (type == DUE_V || type == QUATTRO) shape.getChild(0).setFill(fillColor);
+          break;
+        case 2:
+          if (type == DUE_V || type == QUATTRO) shape.getChild(1).setFill(fillColor);
+          break;
+        case 3:
+          if (type == DUE_H) shape.getChild(0).setFill(fillColor);
+          if (type == QUATTRO) shape.getChild(2).setFill(fillColor);
+          break;
+        case 4:
+          if (type == DUE_H) shape.getChild(1).setFill(fillColor);
+          if (type == QUATTRO) shape.getChild(3).setFill(fillColor);
+          break;
+      }
+    }
+    else {
+      shape.setStrokeWeight(strokeWeight);
+      shape.setStroke(strokeColor);
+      shape.setFill(fillColor);
+    }
+
     shape(shape, posX + border, posY + border);
 
     // draw label
     fill(textColor);
     textSize(fontSize);
     textAlign(CENTER);
-    text(label, posX + textX, posY + textY);
-
+    switch (type) {
+      case UNO:
+        text(label[0], posX + textX, posY + textY);
+        break;
+      case DUE_H:
+        text(label[0], posX + textX/2, posY + textY);
+        text(label[1], posX + textX*3/2, posY + textY);
+        break;
+      case DUE_V:
+        text(label[0], posX + textX, posY + textY/2);
+        text(label[1], posX + textX, posY + textY*3/2);
+        break;
+      case QUATTRO:
+        text(label[0], posX + textX, posY + textY/2);
+        text(label[1], posX + textX, posY + textY*3/2);
+        text(label[2], posX + textX/2, posY + textY);
+        text(label[3], posX + textX*3/2, posY + textY);
+        break;
+    }
+    
     fill(0);
   }
 }

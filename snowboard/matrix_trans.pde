@@ -1,12 +1,14 @@
-final int dispWidth = 480;
-final int dispHeight = 480;
-final int senseWidth = 10;
-final int senseHeight = 16;
+final int drawWidth = 360;
+final int drawHeight = 480;
+final int sensorWidth = 10;
+final int sensorHeight = 16;
 final int touchRadius = 25;
 final int touchThreshold = 16;
-final int pressThreshold = 64;
+final int pressThreshold = 127;
 
-// test and validation functions
+//**************************************
+//Start of Test and Validation functions
+//**************************************
 int[][] genForceMap(int r, int c) {
   int[][] map = new int[r][c];
 
@@ -33,6 +35,9 @@ void printMap(int[][] map) {
       println();
     }
 }
+//**************************************
+//End of Test and Validation functions
+//**************************************
 
 class ForceMap {
   int cellX = 0;
@@ -44,11 +49,12 @@ class TouchEvent {
   float x;
   float y;
   float z;
+  boolean processed = false;
 }
 
 ArrayList<TouchEvent> lookforTouch(int[][] map){
   ArrayList<TouchEvent> teList = new ArrayList<TouchEvent>();
-  
+
   for (int row = 0; row < map.length; row++){
     for (int col = 0; col < map[row].length; col++){
       boolean touch = true;
@@ -78,7 +84,7 @@ ArrayList<TouchEvent> lookforTouch(int[][] map){
           int rows = 3;
           int cols = 3;
           int[][] tmap = new int[rows][cols];
-        
+
           for (int i = 0; i < rows; i++){
             for (int j = 0; j < cols; j++){
               int force = 0;
@@ -97,8 +103,8 @@ ArrayList<TouchEvent> lookforTouch(int[][] map){
           TouchEvent te = evalForcemap(fm);
           //println(te.x, te.y, te.z);
           TouchEvent evt = new TouchEvent();
-          evt.x = map(dispHeight-touchRadius-te.y, 0, dispHeight, 0, dispHeight + touchRadius);
-          evt.y = map(te.x, 0, dispWidth, 0, dispWidth + touchRadius);
+          evt.x = map(drawHeight-touchRadius-te.y, 0, drawHeight, 0, drawHeight + touchRadius);
+          evt.y = map(te.x, 0, drawWidth, 0, drawWidth + touchRadius);
           evt.z = te.z;
           teList.add(evt);
         }
@@ -112,7 +118,7 @@ ArrayList<TouchEvent> lookforTouch(int[][] map){
 
 // evalForcemap() takes a 3x3 force matrix and convert it to a x, y, z force event
 //
-// force centroid formula: 
+// force centroid formula:
 // [a, b, c] = sum of force of a column or row
 // x = (b/2 + c) / (a+b+c), x >= 0, x <=1
 // x is the distance from the leftmost or topmost poinit.
@@ -129,7 +135,6 @@ TouchEvent evalForcemap(ForceMap fm) {
   float x = 0, y = 0, z = 0;
   float sum = 0;
   ArrayList<Float> w = new ArrayList<Float>();
-//printMap(fm.map);
 
   for (int row = 0; row < rows; row++) {
     for (int col = 0; col < cols; col++) {
@@ -168,9 +173,9 @@ TouchEvent evalForcemap(ForceMap fm) {
   x = numerator / totalForce;
   z = totalForce; //peakForce * log(totalForce) / log(peakForce);
 
-//println(x, y, z, peakForce);
-  te.x = map(fm.cellX - 1 + x * 2, 0, 1, 0, dispWidth / senseWidth);
-  te.y = map(fm.cellY - 1 + y * 2, 0, 1, 0, dispHeight / senseHeight);
+  //println(x, y, z, peakForce);
+  te.x = map(fm.cellX - 1 + x * 2, 0, 1, 0, drawWidth / sensorWidth);
+  te.y = map(fm.cellY - 1 + y * 2, 0, 1, 0, drawHeight / sensorHeight);
   te.z = z;
 
   return te;
