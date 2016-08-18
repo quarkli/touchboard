@@ -10,6 +10,7 @@ final int DUE_V = 2;
 final int QUATTRO = 3;
 final int KEYBOARD = 0;
 final int PAINT = 1;
+final int TOUCHPAD = 2;
 
 KLib klib;
 int mode = KEYBOARD;
@@ -18,7 +19,7 @@ int translateY = 160;
 int scnWidth = 0;
 int scnHeight = 0;
 int keyRows = 3;
-int keyCols = 4;
+int keyCols = 5;
 String[] inText = new String[2];
 char cursor = '_';
 int cursorTimer = 0;
@@ -54,17 +55,17 @@ final String[][][] kl2 = {
   {"if", "for", "+", "-"},
   {"while", "switch", "*", "/"},
   {"=", "{}", "y", "z"},
-  {"", "", "", ""}},
+  {".", ",", ";", ":"}},
   {{"<-", "->", "", ""},
   {"o", "a", "t", "d"},
   {"e", "i", "m", "n"},
   {"f", "j", "g", "k"},
-  {"", "", "", ""}},
+  {"KB", "CLR", "TP", "PB"}},
   {{"Enter", "", "", ""},
   {"p", "b", "c", "l"},
   {"h", "s", "r", "w"},
   {"u", "v", "q", "x"},
-  {"", "", "", ""}}
+  {"()", "[]", "/", "|"}}
 };
 String[][][] keyLabels = kl2;
 
@@ -85,7 +86,6 @@ void setup() {
   if (mode == KEYBOARD) {
     // create buttons
     for (int i=0; i<keyRows; i++) {
-      int n = 0;
       for (int j=0; j<keyCols; j++) {
         if (j > 0) {
           buttons[i][j] = new KeyButton(QUATTRO, scnWidth/keyCols, scnHeight/keyRows, 10);
@@ -147,7 +147,11 @@ void draw() {
           }
         }
       }
-      else if (mode == PAINT) {
+      else {
+        buttons[1][4].draw(teList);
+      }
+      
+      if (mode == PAINT) {
         paint(teList);
       }
       
@@ -217,6 +221,7 @@ void paint(ArrayList<TouchEvent> teList) {
       }
 
       if (paint_debounce > 2) {
+        if (te.x > scnWidth - 130) te.x = scnWidth - 130; 
         te.processed = false;
         paint_debounce = 0;
       }
@@ -538,6 +543,29 @@ public class KeyButton
           else if (label[id] == "{}") {
             inText[0] += "{";
             inText[1] = "}" + inText[1];
+          }
+          else if (label[id] == "()") {
+            inText[0] += "(";
+            inText[1] = ")" + inText[1];
+          }
+          else if (label[id] == "[]") {
+            inText[0] += "[";
+            inText[1] = "]" + inText[1];
+          }
+          else if (label[id] == "KB") {
+            mode = KEYBOARD;
+          }
+          else if (label[id] == "TP") {
+            mode = TOUCHPAD;
+          }
+          else if (label[id] == "PB") {
+            mode = PAINT;
+          }
+          else if (label[id] == "CLR") {
+            inText[0] = inText[1] = "";
+            while (paintList.size() > 0) {
+              paintList.remove(0);
+            }
           }
           else inText[0] += label[id];
         }

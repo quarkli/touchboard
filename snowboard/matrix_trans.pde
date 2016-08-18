@@ -5,7 +5,7 @@
 */
 
 final int drawWidth = 360;
-final int drawHeight = 480;
+final int drawHeight = 640;
 final int sensorWidth = 10;
 final int sensorHeight = 16;
 final int touchRadius = 25;
